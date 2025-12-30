@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cat vs Dog Classifier</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .card {
+            width: 100%;
+            max-width: 420px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            color: #fff;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .upload-box {
+            border: 2px dashed rgba(255,255,255,0.5);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            color: #fff;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #00c6ff;
+            background: linear-gradient(135deg, #00c6ff, #0072ff);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.25);
+        }
+
+        .result {
+            margin-top: 20px;
+            background: rgba(0,0,0,0.25);
+            border-radius: 12px;
+            padding: 15px;
+        }
+
+        .result h2 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+
+        .confidence {
+            font-size: 0.9rem;
+            opacity: 0.85;
+        }
+
+        img {
+            margin-top: 15px;
+            max-width: 100%;
+            border-radius: 12px;
+            border: 2px solid rgba(255,255,255,0.4);
+        }
+
+        footer {
+            margin-top: 15px;
+            font-size: 0.75rem;
+            opacity: 0.6;
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>🐶 Cat vs Dog Classifier 🐱</h1>
+    <p>Upload an image and let the CNN model predict</p>
+
+    <form action="/predict" method="post" enctype="multipart/form-data">
+        <div class="upload-box">
+            <input type="file" name="file" accept="image/*" required>
+        </div>
+        <button type="submit">Predict</button>
+    </form>
+
+    {% if prediction %}
+    <div class="result">
+        <h2>Prediction: {{ prediction }}</h2>
+        <div class="confidence">Confidence: {{ confidence }}%</div>
+        <img src="{{ image_path }}" alt="Uploaded Image">
+    </div>
+    {% endif %}
+
+    <footer>
+        Powered by CNN • Flask • Azure
+    </footer>
+</div>
+
+</body>
+</html>
