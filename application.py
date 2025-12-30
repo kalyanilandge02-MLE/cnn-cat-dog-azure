@@ -1,4 +1,5 @@
 import os
+import requests
 import numpy as np
 from flask import Flask, request, render_template
 from tensorflow.keras.models import load_model
@@ -16,7 +17,25 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Load model
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "model", "cnn_model.h5")
+
+MODEL_URL = "https://cnnmodelh5.blob.core.windows.net/cnnmodel/cnn_model.h5"
+
+os.makedirs("model", exist_ok=True)
+
+def download_model():
+    if not os.path.exists(MODEL_PATH):
+        print("Downloading model from Blob Storage...")
+        r = requests.get(MODEL_URL, stream=True)
+        with open(MODEL_PATH, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+        print("Model downloaded successfully")
+
+download_model()
 model = load_model(MODEL_PATH)
+
 CLASS_NAMES = ["Cat", "Dog"]
 
 @app.route("/")
