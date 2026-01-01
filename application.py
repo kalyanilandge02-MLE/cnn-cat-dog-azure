@@ -10,7 +10,6 @@ app = Flask(__name__)
 
 # Config
 UPLOAD_FOLDER = "static/uploads"
-MODEL_PATH = "model/cnn_model.h5"
 IMG_SIZE = (224, 224)   # MUST match training size
 
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
@@ -18,23 +17,30 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # Load model
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "model", "cnn_model.h5")
+MODEL_DIR = os.path.join(BASE_DIR, "model")
+MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model.h5")
 
-MODEL_URL = "https://cnnmodelh5.blob.core.windows.net/cnnmodel/cnn_model.h5"
-
-os.makedirs("model", exist_ok=True)
+MODEL_URL = "https://cnnmodelh5.blob.core.windows.net/cnnmodel?sp=r&st=2026-01-01T17:00:34Z&se=2026-01-02T01:15:34Z&spr=https&sv=2024-11-04&sr=c&sig=FwsNSEQH1Ru7wzWk0NzrIB%2Fw7hi3PHXOoIXxC7%2BOpwc%3D"
+os.makedirs(MODEL_DIR, exist_ok=True)
 
 def download_model():
-    if not os.path.exists(MODEL_PATH):
-        print("Downloading model from Blob Storage...")
+    if not os.path.exists(MODEL_PATH) or os.path.getsize(MODEL_PATH) < 100_000_000:
+        print("Downloading model from Azure Blob Storage...")
         r = requests.get(MODEL_URL, stream=True)
+        r.raise_for_status()
+
         with open(MODEL_PATH, "wb") as f:
-            for chunk in r.iter_content(chunk_size=8192):
-                f.write(chunk)
-        print("Model downloaded successfully")
+            for chunk in r.iter_content(8192):
+                if chunk:
+                    f.write(chunk)
+
+        print("Model downloaded. Size:", os.path.getsize(MODEL_PATH))
 
 download_model()
+
+print("Loading model...")
 model = load_model(MODEL_PATH)
+print("Model loaded successfully")
 
 CLASS_NAMES = ["Cat", "Dog"]
 
