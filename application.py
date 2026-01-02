@@ -28,11 +28,11 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # Model paths
 # --------------------------------------------------
 MODEL_DIR = "/home/site/wwwroot/model"
-MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model_tf215_FIXED.keras")
+MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model_savedmodel")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 # 🔗 Azure Blob URL (FIXED MODEL)
-MODEL_URL = "https://cnnmodelh5.blob.core.windows.net/cnnmodel/cnn_model_tf215_FIXED.keras?sp=r&st=2026-01-02T19:27:08Z&se=2026-01-03T03:42:08Z&spr=https&sv=2024-11-04&sr=b&sig=g7EGH%2Fz9sWtZcFrzQ0sVlvguCtCxXTWIAYzblcgMSos%3D"
+MODEL_URL = "https://cnnmodelh5.blob.core.windows.net/cnnmodel/cnn_model_savedmodel.zip?sp=r&st=2026-01-02T19:54:19Z&se=2026-01-03T04:09:19Z&spr=https&sv=2024-11-04&sr=b&sig=elQi9NLktjRMh44WVDtq3XYpcZrGObt63q%2BjyLhoANw%3D"
 
 # Singleton model (lazy loaded)
 model = None
@@ -40,21 +40,28 @@ model = None
 # --------------------------------------------------
 # Download model if not present
 # --------------------------------------------------
+import zipfile
+
 def download_model():
     if os.path.exists(MODEL_PATH):
         print("✅ Model already exists — skipping download")
         return
 
-    print("📥 Downloading model from Azure Blob Storage...")
+    zip_path = os.path.join(MODEL_DIR, "model.zip")
+
     r = requests.get(MODEL_URL, stream=True, timeout=120)
     r.raise_for_status()
 
-    with open(MODEL_PATH, "wb") as f:
-        for chunk in r.iter_content(chunk_size=1024 * 1024):
+    with open(zip_path, "wb") as f:
+        for chunk in r.iter_content(1024 * 1024):
             if chunk:
                 f.write(chunk)
 
-    print("✅ Model downloaded successfully")
+    with zipfile.ZipFile(zip_path, "r") as zip_ref:
+        zip_ref.extractall(MODEL_DIR)
+
+    print("✅ SavedModel extracted")
+
 
 # --------------------------------------------------
 # Lazy model loader (loads only once)
@@ -66,10 +73,8 @@ def get_model():
         print("🧠 Loading model into memory...")
         download_model()
 
-        model = tf.keras.models.load_model(
-            MODEL_PATH,
-            compile=False
-        )
+        model = tf.keras.models.load_model(MODEL_PATH)
+
 
         print("✅ Model loaded successfully")
 
