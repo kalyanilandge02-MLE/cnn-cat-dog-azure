@@ -19,7 +19,7 @@ MODEL_DIR = "/home/site/wwwroot/model"
 MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model.keras")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-MODEL_URL = "https://cnnmodelh5.blob.core.windows.net/cnnmodel/cnn_model.keras?sp=r&st=2026-01-01T18:18:06Z&se=2026-01-30T02:33:06Z&sv=2024-11-04&sr=b&sig=BxQExZck7jJ7wx0SqTOyUchMMg4k%2BulbZdgCMkFZKnQ%3D"
+MODEL_URL = "https://cnnmodelh5.blob.core.windows.net/cnnmodel/cnn_model_tf215.keras?sp=r&st=2026-01-02T09:40:54Z&se=2026-01-02T17:55:54Z&spr=https&sv=2024-11-04&sr=b&sig=5pYZKOVPLyqCV3AtdiVaRoPVoTVLqCROw%2BofTsJ32NI%3D"
 
 model = None  # 🔴 IMPORTANT
 
