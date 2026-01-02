@@ -4,13 +4,17 @@ import numpy as np
 import tensorflow as tf
 from flask import Flask, request, render_template
 from werkzeug.utils import secure_filename
-from keras.utils import load_img, img_to_array
+from tensorflow.keras.utils import load_img, img_to_array
 
-# ---------------- FORCE CPU (VERY IMPORTANT) ----------------
+# --------------------------------------------------
+# FORCE CPU (Azure App Service safe)
+# --------------------------------------------------
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 tf.config.set_visible_devices([], "GPU")
 
-# ---------------- FLASK APP ----------------
+# --------------------------------------------------
+# Flask App
+# --------------------------------------------------
 app = Flask(__name__)
 
 UPLOAD_FOLDER = "static/uploads"
@@ -20,44 +24,46 @@ CLASS_NAMES = ["Cat", "Dog"]
 app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-# ---------------- MODEL PATH ----------------
+# --------------------------------------------------
+# Model paths
+# --------------------------------------------------
 MODEL_DIR = "/home/site/wwwroot/model"
-MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model.keras")
+MODEL_PATH = os.path.join(MODEL_DIR, "cnn_model_tf215_FIXED.keras")
 os.makedirs(MODEL_DIR, exist_ok=True)
 
-MODEL_URL = "https://cnnmodelh5.blob.core.windows.net/cnnmodel/cnn_model_tf215.keras?sp=r&st=2026-01-02T09:40:54Z&se=2026-01-02T17:55:54Z&spr=https&sv=2024-11-04&sr=b&sig=5pYZKOVPLyqCV3AtdiVaRoPVoTVLqCROw%2BofTsJ32NI%3D"
+# 🔗 Azure Blob URL (FIXED MODEL)
+MODEL_URL = "https://cnnmodelh5.blob.core.windows.net/cnnmodel/cnn_model_tf215_FIXED.keras?sp=r&st=2026-01-02T19:27:08Z&se=2026-01-03T03:42:08Z&spr=https&sv=2024-11-04&sr=b&sig=g7EGH%2Fz9sWtZcFrzQ0sVlvguCtCxXTWIAYzblcgMSos%3D"
 
-model = None  # lazy-loaded singleton
+# Singleton model (lazy loaded)
+model = None
 
-# ---------------- DOWNLOAD MODEL ----------------
+# --------------------------------------------------
+# Download model if not present
+# --------------------------------------------------
 def download_model():
     if os.path.exists(MODEL_PATH):
-        print("✅ Model already exists locally — skipping download")
+        print("✅ Model already exists — skipping download")
         return
 
     print("📥 Downloading model from Azure Blob Storage...")
-    try:
-        r = requests.get(MODEL_URL, stream=True, timeout=60)
-        r.raise_for_status()
+    r = requests.get(MODEL_URL, stream=True, timeout=120)
+    r.raise_for_status()
 
-        with open(MODEL_PATH, "wb") as f:
-            for chunk in r.iter_content(chunk_size=1024 * 1024):
-                if chunk:
-                    f.write(chunk)
+    with open(MODEL_PATH, "wb") as f:
+        for chunk in r.iter_content(chunk_size=1024 * 1024):
+            if chunk:
+                f.write(chunk)
 
-        print("✅ Model downloaded successfully")
+    print("✅ Model downloaded successfully")
 
-    except Exception as e:
-        print("❌ Model download failed:", e)
-        raise RuntimeError("Model download failed")
-
-# ---------------- LAZY LOAD MODEL ----------------
+# --------------------------------------------------
+# Lazy model loader (loads only once)
+# --------------------------------------------------
 def get_model():
     global model
 
     if model is None:
-        print("🧠 Loading model into memory (first request only)...")
-
+        print("🧠 Loading model into memory...")
         download_model()
 
         model = tf.keras.models.load_model(
@@ -65,11 +71,13 @@ def get_model():
             compile=False
         )
 
-        print("✅ Model loaded into memory")
+        print("✅ Model loaded successfully")
 
     return model
 
-# ---------------- ROUTES ----------------
+# --------------------------------------------------
+# Routes
+# --------------------------------------------------
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -80,20 +88,25 @@ def health():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    mdl = get_model()  # loads only once
+    mdl = get_model()
+
+    if "file" not in request.files:
+        return render_template("index.html", prediction="No file uploaded")
 
     file = request.files["file"]
     filename = secure_filename(file.filename)
     filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
     file.save(filepath)
 
+    # ---------------- Image preprocessing ----------------
     img = load_img(filepath, target_size=IMG_SIZE)
     img_array = img_to_array(img)
     img_array = np.expand_dims(img_array, axis=0)
 
-    # EfficientNet preprocessing
+    # Must match training preprocessing
     img_array = tf.keras.applications.efficientnet.preprocess_input(img_array)
 
+    # ---------------- Prediction ----------------
     prediction = mdl.predict(img_array, verbose=0)
     score = float(prediction[0][0])
 
@@ -107,6 +120,8 @@ def predict():
         image_path=filepath
     )
 
-# ---------------- LOCAL RUN ----------------
+# --------------------------------------------------
+# Local run
+# --------------------------------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)

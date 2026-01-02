@@ -1,4 +1,7 @@
 best-env
-model/cnn_model.keras
+model/*
 tf220
 mew.ipynb
+new-env
+tf215-env
+tf215-clean
