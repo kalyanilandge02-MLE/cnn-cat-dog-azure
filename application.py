@@ -50,6 +50,10 @@ def get_model():
 def home():
     return render_template("index.html")
 
+@app.route("/health")
+def health():
+    return "OK", 200
+
 @app.route("/predict", methods=["POST"])
 def predict():
     mdl = get_model()   # 🔥 LOADS ONLY ON FIRST REQUEST
